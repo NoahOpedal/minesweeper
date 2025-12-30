@@ -1,9 +1,8 @@
 import pygame
-import random
 import time
 
-from tile import Tile
 from board import Board
+from counter import Counter
 
 
 def open_adjacent_zeroes(tile_pos: tuple[int, int], board: Board) -> None:
@@ -39,7 +38,7 @@ def open_adjacent_zeroes(tile_pos: tuple[int, int], board: Board) -> None:
                     open_adjacent_zeroes((col, row), board)
 
 
-def update_screen(screen: pygame.Surface, board: Board, tile_size: tuple[int, int], background_color: str = "dark grey") -> None:
+def update_screen(screen: pygame.Surface, board: Board, tile_size: tuple[int, int], timer: Counter, mine_counter: Counter, background_color: str = "dark grey") -> None:
     """
     Update the pygame screen.
 
@@ -62,6 +61,10 @@ def update_screen(screen: pygame.Surface, board: Board, tile_size: tuple[int, in
         tile_x = 1
         tile_y += tile_height
         
+    timer_text = pygame.font.Font(None, 36).render(f"Time: {timer.value}", True, "red")
+    screen.blit(timer_text, timer.screen_pos)
+    mine_counter_text = pygame.font.Font(None, 36).render(f"Mines: {mine_counter.value}", True, "red")
+    screen.blit(mine_counter_text, mine_counter.screen_pos)
 
 def spacebar_functionality(tile_pos: tuple[int, int], board: Board) -> str|None:
     """
@@ -163,20 +166,28 @@ def regenerate_board(board: Board, n_mines: int, tile_clicked_pos: tuple[int, in
 
 
 def game_loop():
-    board_width = 10    # Measured in tiles
+    fps = 60
+    board_width = 10    # Tiles
     board_height = 10
-    window_width = 800  # Because of a pygame rounding error the window width must be a multiple of the board width
-    window_height = 800 # The same is true for the board and window heights, except for 200px for title and number of mines display
+    window_width = 800  # Px. Because of a pygame rounding error the window width must be a multiple of the board width. The same applies to height.
+    window_height = 800 # Px.
+    info_display_height = 200   # Px. Height of the display for timer and mine count
     tile_width = (window_width//board_width)
     tile_height = (window_height//board_height)
     n_mines = -1
 
-    screen = pygame.display.set_mode((window_width, window_height))
+    screen = pygame.display.set_mode((window_width, window_height+info_display_height))
     pygame.display.set_caption("Minesweeper")
     board = Board((board_width, board_height), n_mines=n_mines)
 
+    mine_counter = Counter((50, window_height + 50), (50, 100), start_value=board.n_mines)
+    timer = Counter((window_width - 200, window_height + 50), (50, 100))
+
+    start_time = pygame.time.get_ticks()  # milliseconds
+
     running = True
     first_click = True
+
     while running:
         flag = False
         click = False
@@ -217,10 +228,14 @@ def game_loop():
         elif tile_clicked_pos:
             update_game(board, click, flag, tile_clicked_pos)
 
-        else:
-            update_screen(screen, board, (tile_width, tile_height))
-
         if first_click and tile_clicked_pos:
             first_click = False
 
-        pygame.display.update()
+        time_elapsed = (pygame.time.get_ticks() - start_time) // 1000  # seconds
+        timer.set(time_elapsed)
+        mine_counter.set(board.n_mines - sum(1 for row in board.tiles for tile in row if tile.flagged))
+
+        update_screen(screen, board, (tile_width, tile_height), timer, mine_counter)
+
+        pygame.display.flip()
+        time.sleep(1/fps)

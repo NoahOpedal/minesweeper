@@ -17,16 +17,17 @@ class Board:
             n_mines = (n_tiles*2) // 9
         tiles = []
         n_non_mines = n_tiles-n_mines
+        n_mines_to_place = n_mines
         
         for row in range(board_y):
             new_row = []
         
             for column in range(board_x):
-                is_mine = random.choice([False]*n_non_mines+[True]*n_mines)
+                is_mine = random.choice([False]*n_non_mines+[True]*n_mines_to_place)
                 new_mine = Tile(is_mine)
 
                 if is_mine:
-                    n_mines -= 1
+                    n_mines_to_place -= 1
                 else:
                     n_non_mines -= 1
                 n_tiles -= 1
@@ -38,7 +39,7 @@ class Board:
         self.tiles = tiles
         self.n_tiles = n_tiles
         self.n_mines = n_mines
-        self.n_non_mines = n_non_mines
+        self.n_non_mines = n_tiles - n_mines
         self.size = size
 
         # Calculate number of mines around each tile
