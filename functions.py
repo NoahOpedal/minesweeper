@@ -66,6 +66,7 @@ def update_screen(screen: pygame.Surface, board: Board, tile_size: tuple[int, in
     mine_counter_text = pygame.font.Font(None, 36).render(f"Mines: {mine_counter.value}", True, "red")
     screen.blit(mine_counter_text, mine_counter.screen_pos)
 
+
 def spacebar_functionality(tile_pos: tuple[int, int], board: Board) -> str|None:
     """
     When spacebar is pressed while hovering over an opened tile, click all tiles around if number of flags around match the number on the tile.
@@ -142,7 +143,8 @@ def update_game(board: Board, click: bool, flag: bool, tile_clicked_pos: tuple[i
         if not tile.clicked:
             tile.flagged = not tile.flagged
         else:
-            spacebar_functionality(tile_clicked_pos, board)            
+            if spacebar_functionality(tile_clicked_pos, board) == "exploded":
+                return "exploded" 
         
 
 def regenerate_board(board: Board, n_mines: int, tile_clicked_pos: tuple[int, int]) -> Board:
@@ -222,11 +224,15 @@ def game_loop():
 
         elif click and first_click and tile_clicked_pos and not board.get(tile_clicked_pos).n_mines_around == 0:
             board = regenerate_board(board, n_mines, tile_clicked_pos)
-            update_game(board, click, flag, tile_clicked_pos)
+            if update_game(board, click, flag, tile_clicked_pos) == "exploded":
+                print("*explosion*")
+                running = False
 
 
         elif tile_clicked_pos:
-            update_game(board, click, flag, tile_clicked_pos)
+            if update_game(board, click, flag, tile_clicked_pos) == "exploded":
+                print("*explosion*")
+                running = False
 
         if first_click and tile_clicked_pos:
             first_click = False
